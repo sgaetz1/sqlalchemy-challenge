@@ -30,11 +30,12 @@ def homepage():
     """List all available api routes."""
     return (
         f"Welcome!<br/>"
+        f"Where dates are needed, enter date between 2010-01-01 and 2017-08-23.<br/>"
         f"Available Routes:<br/>"
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/Enter a start date here, like this: yyyy-mm-dd<br/>"
+        f"/api/v1.0/Enter start date<br/>"
         f"/api/v1.0/Enter start date/Enter end date"
     )
 
@@ -44,7 +45,6 @@ def precipitation():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
-    most_recent = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
     year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
     results = session.query(Measurement.date,Measurement.prcp).filter(Measurement.date > year_ago).order_by(Measurement.date).all()
     
@@ -91,7 +91,14 @@ def tobs():
     
     session.close()
 
-    return jsonify(results)
+    precip=[]
+    for date,prcp in results:
+        rain_dict={}
+        rain_dict["date"]=date
+        rain_dict["precipitation"]=prcp
+        precip.append(rain_dict)
+
+    return jsonify(precip)
 
 @app.route("/api/v1.0/<start>")
 def temps(start):
@@ -104,7 +111,7 @@ def temps(start):
 
     results = list(np.ravel(results))
     
-    keys = ['Minimum Temp','Maximum Temp', 'Average_Temp']
+    keys = ['Minimum Temp','Maximum Temp', 'Average Temp']
     temp_dict = dict(zip(keys,results))
 
 
@@ -121,7 +128,7 @@ def start_end(start, end):
 
     results = list(np.ravel(results))
     #temp = [min_temp,max_temp,avg_temp]
-    keys = ['Minimum Temp','Maximum Temp', 'Average_Temp']
+    keys = ['Minimum Temp','Maximum Temp', 'Average Temp']
     temp_dict = dict(zip(keys,results))
 
     return jsonify(temp_dict)
