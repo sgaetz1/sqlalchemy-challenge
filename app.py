@@ -29,7 +29,7 @@ app = Flask(__name__)
 def homepage():
     """List all available api routes."""
     return (
-        f"Welcome!<br/>"
+        f"Welcome to the climate app!<br/>"
         f"Where dates are needed, enter date between 2010-01-01 and 2017-08-23.<br/>"
         f"Available Routes:<br/>"
         f"/api/v1.0/precipitation<br/>"
@@ -46,27 +46,16 @@ def precipitation():
     session = Session(engine)
 
     year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
-    results = session.query(Measurement.date,Measurement.prcp).filter(Measurement.date > year_ago).order_by(Measurement.date).all()
+    results = session.query(Measurement.date,Measurement.prcp).filter(Measurement.date >= year_ago).order_by(Measurement.date).all()
     
     session.close()
 
-    # # Convert list of tuples into normal list
-    #rain = list(np.ravel(results))
-
-    # def Convert(a):
-    #     it = iter(a)
-    #     dic = dict(zip(it,it))
-    #     return dic
-
-    # rain_dict = Convert(rain)
     precip=[]
     for date,prcp in results:
         rain_dict={}
-        rain_dict["date"]=date
-        rain_dict["precipitation"]=prcp
+        rain_dict[date]=prcp
         precip.append(rain_dict)
-
-
+ 
     return jsonify(precip)
 
 
@@ -79,26 +68,24 @@ def stations():
     results = session.query(Station.name).all()
 
     session.close()
-
-    return jsonify(results)
+    
+    stations = list(np.ravel(results))
+   
+    return jsonify(stations)
 
 @app.route("/api/v1.0/tobs")
 def tobs():
     # Create our session (link) from Python to the DB
     session = Session(engine)
+    
     year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
     results = session.query(Measurement.date,Measurement.tobs).filter(Measurement.station == 'USC00519281').filter(Measurement.date > year_ago).all()
     
     session.close()
 
-    precip=[]
-    for date,prcp in results:
-        rain_dict={}
-        rain_dict["date"]=date
-        rain_dict["precipitation"]=prcp
-        precip.append(rain_dict)
+    temps=dict(results)
 
-    return jsonify(precip)
+    return jsonify(temps)
 
 @app.route("/api/v1.0/<start>")
 def temps(start):
@@ -127,7 +114,7 @@ def start_end(start, end):
     session.close()
 
     results = list(np.ravel(results))
-    #temp = [min_temp,max_temp,avg_temp]
+    
     keys = ['Minimum Temp','Maximum Temp', 'Average Temp']
     temp_dict = dict(zip(keys,results))
 
